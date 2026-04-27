@@ -18,4 +18,4 @@ for file in os.listdir(DATA_PATH):
 index, _ = create_index(all_chunks)
 save_index(index, all_chunks)
 
-print("✅ All documents indexed successfully")
+print("All documents indexed successfully")
