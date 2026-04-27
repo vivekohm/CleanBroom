@@ -5,6 +5,7 @@ def ask_llama(prompt):
         ["ollama", "run", "llama3"],
         input=prompt,
         text=True,
-        capture_output=True
+        capture_output=True,
+        encoding="utf-8"
     )
     return result.stdout
