@@ -1,0 +1,149 @@
+Config file
+
+# config.py
+
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+CHUNK_SIZE = 300
+TOP_K = 3
+VECTOR_DB_PATH = "data/vector_store/index.faiss"
+
+
+# app/ingest.py
+
+from pypdf import PdfReader
+from sentence_transformers import SentenceTransformer
+import faiss
+import numpy as np
+import os
+import pickle
+from config import *
+
+model = SentenceTransformer(EMBEDDING_MODEL)
+
+def load_pdf(file):
+    reader = PdfReader(file)
+    return " ".join([page.extract_text() or "" for page in reader.pages])
+
+def chunk_text(text):
+    words = text.split()
+    return [" ".join(words[i:i+CHUNK_SIZE]) for i in range(0, len(words), CHUNK_SIZE)]
+
+def create_index(chunks):
+    embeddings = model.encode(chunks)
+    dimension = embeddings.shape[1]
+
+    index = faiss.IndexFlatL2(dimension)
+    index.add(np.array(embeddings))
+
+    return index, embeddings
+
+def save_index(index, chunks):
+    os.makedirs("data/vector_store", exist_ok=True)
+
+    faiss.write_index(index, VECTOR_DB_PATH)
+
+    with open("data/vector_store/chunks.pkl", "wb") as f:
+        pickle.dump(chunks, f)
+
+
+
+
+# app/retriever.py
+
+import faiss
+import pickle
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from config import *
+
+model = SentenceTransformer(EMBEDDING_MODEL)
+
+index = faiss.read_index(VECTOR_DB_PATH)
+
+with open("data/vector_store/chunks.pkl", "rb") as f:
+    chunks = pickle.load(f)
+
+def search(query):
+    query_vec = model.encode([query])
+    D, I = index.search(np.array(query_vec), k=TOP_K)
+    return [chunks[i] for i in I[0]]
+
+
+# app/llm.py
+
+import subprocess
+
+def ask_llama(prompt):
+    result = subprocess.run(
+        ["ollama", "run", "llama3"],
+        input=prompt,
+        text=True,
+        capture_output=True
+    )
+    return result.stdout
+
+
+
+# app/pipeline.py
+
+from app.retriever import search
+from app.llm import ask_llama
+
+def query_system(question):
+    context = search(question)
+
+    prompt = f"""
+    You are a helpful assistant.
+    Answer ONLY from the context below.
+
+    Context:
+    {context}
+
+    Question:
+    {question}
+    """
+
+    return ask_llama(prompt)
+
+
+
+
+# api/main.py
+
+from fastapi import FastAPI
+from app.pipeline import query_system
+
+app = FastAPI()
+
+@app.get("/ask")
+def ask(q: str):
+    answer = query_system(q)
+    return {"answer": answer}
+
+
+
+Run it:
+
+uvicorn api.main:app --reload
+
+
+One-time ingestion script
+
+# run_ingest.py
+
+from app.ingest import load_pdf, chunk_text, create_index, save_index
+
+text = load_pdf("data/raw/doc.pdf")
+chunks = chunk_text(text)
+
+index, _ = create_index(chunks)
+save_index(index, chunks)
+
+print("✅ Index built successfully")
+
+python run_ingest.py
+fastapi
+numpy
+faiss-cpu
+sentence-transformers
+pypdf
