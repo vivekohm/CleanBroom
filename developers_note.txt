@@ -1,1 +1,71 @@
-This is ai tool created by Vivek Krishnan, Vidya Jaya Krishnan, Nandu S Sant
+Developed by: Vivek Krishnan, Vidya Jaya Krishnan, Nandu S Santhosh, Atharva S Vichare
+
+IDE : pyCharm.
+
+ Overview
+
+This AI tool is designed to securely process and query private documents using Small Machine Learning (SML) models.
+
+The primary goal is to:
+
+Ensure data privacy by using local models instead of external APIs
+Allow users to query private documents safely
+Provide accurate responses using multiple local models for academic comparison
+
+The system leverages FastAPI to deliver results, enabling seamless integration with future applications.
+
+ Features
+  Fully local processing (no external API calls)
+  Supports querying private documents
+  Uses 3 different local models for output generation (academic purpose)
+  FastAPI backend for scalable and modular deployment
+ ️ Installation & Setup
+1. Install Required Packages
+
+Make sure the following Python packages are installed:
+
+pip install uvicorn fastapi sentence-transformers faiss-cpu
+
+Or alternatively:
+
+python -m pip install uvicorn fastapi sentence-transformers faiss-cpu
+2. Prepare Document Data
+Navigate to the data/raw folder
+Add the documents you want the system to process
+3. Run Data Ingestion
+
+Execute the ingestion script to process and index your documents:
+
+python run_ingest.py
+
+This will generate:
+
+chunks.pkl
+index.faiss
+
+These files will be stored in the vectorstore folder.
+
+4. Start the API Server
+
+Run the FastAPI server using:
+
+uvicorn api.main:app --reload
+5. Access the API Documentation
+
+Once the server starts, you will see a URL like:
+
+http://127.0.0.1:8000
+
+Open the interactive API documentation in your browser:
+
+http://127.0.0.1:8000/docs
+6. Query the System
+Locate the endpoint: GET /ask (ASK)
+Click on "Try it out"
+Enter your query
+Execute the request to receive results
+
+ Notes
+Ensure your documents are added before running ingestion
+The system relies entirely on local models, so performance depends on your hardware
+Designed primarily for academic and research purposes
