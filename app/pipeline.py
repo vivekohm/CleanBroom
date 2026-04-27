@@ -5,8 +5,15 @@ def query_system(question):
     context = search(question)
 
     prompt = f"""
-    You are a helpful assistant.
-    Answer ONLY from the context below.
+    You are a strict document assistant.
+
+    Use ONLY the provided context to answer the question.
+    If the answer is not explicitly in the context, reply exactly:
+    "I don't know based on the provided document."
+    
+    Do NOT use any external knowledge.
+    Do NOT make assumptions.
+
 
     Context:
     {context}
